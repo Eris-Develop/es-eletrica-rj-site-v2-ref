@@ -1,3 +1,164 @@
+import PublicReviews from '@/components/PublicReviews';
 import SolarCalculator from '@/components/SolarCalculator';
-const reviews=[['Lídia Fernandes','Super recomendo o trabalho desse profissional responsável, atendimento rápido e preço justo.','/img_star/lidia Fernandes.png'],['Pedro Henrique','Equipe profissional, organizada e transparente. O orçamento ficou claro e o serviço foi entregue no prazo.','/img_star/pedro henrique.jpg'],['Reynaldo Costa','Fizeram instalação elétrica e pontos de segurança. Trabalho limpo, seguro e bem explicado.','/img_star/reynaldo costa.jpg'],['Shirley Calaça','Atendimento excelente. Tirou dúvidas, passou confiança e resolveu o problema com qualidade.','/img_star/shirley cala#U00e7a.jpg'],['Simone Boechat','Gostei muito da organização, rapidez e educação no atendimento. Recomendo a ES Elétrica RJ.','/img_star/simone boechat.jpg']];
-export default function Home(){return <main><section className="hero"><div className="container"><div><div className="eyebrow" style={{color:'#ffdf66'}}>Energia • Segurança • Automação</div><h1>Projeto profissional para economizar, proteger e modernizar seu imóvel.</h1><p>Site inspirado no projeto original da ES Elétrica RJ, agora com visual mais forte, calculadora solar, captação de leads, avaliações reais, LGPD e integração segura com Supabase.</p><div style={{display:'flex',gap:12,flexWrap:'wrap'}}><a className="btn btn-primary" href="#calculadora">Calcular energia solar</a><a className="btn btn-outline" href="/stories">Ver obras e stories</a></div><div className="meter"><div className="metric"><b>95%</b><span>economia possível</span></div><div className="metric"><b>5 anos</b><span>garantia instalação</span></div><div className="metric"><b>RJ</b><span>Niterói e região</span></div></div></div><div className="hero-card"><h2>Atendimento técnico e comercial</h2><p>Energia solar on-grid, instalações elétricas NBR 5410, CFTV, alarmes, automação residencial e manutenção.</p><div className="card" style={{background:'rgba(255,255,255,.95)',color:'#0f172a'}}><b>Próximo passo:</b><br/>Faça a simulação, salve o lead no banco e receba atendimento da equipe.</div></div></div></section><section className="section" id="servicos"><div className="container"><div className="section-title"><div className="eyebrow">Áreas de atuação</div><h2>Soluções completas da ES Elétrica RJ</h2><p>Baseado nas áreas do site de referência, com apresentação mais moderna, responsiva e pronta para SEO.</p></div><div className="services"><div className="card service"><div className="icon">☀️</div><h3>Energia Solar</h3><p>Projetos fotovoltaicos personalizados, homologação, instalação e suporte pós-venda.</p></div><div className="card service"><div className="icon">⚡</div><h3>Instalações Elétricas</h3><p>Reformas, quadros, DR, DPS, aterramento, circuitos dedicados e padrão seguro.</p></div><div className="card service"><div className="icon">🎥</div><h3>Segurança Eletrônica</h3><p>CFTV, alarmes, sensores, controle de acesso, concertina e monitoramento.</p></div><div className="card service"><div className="icon">🏠</div><h3>Automação Residencial</h3><p>Iluminação, climatização, áudio, vídeo e controle inteligente pelo celular.</p></div></div></div></section><section className="section" id="calculadora"><div className="container"><div className="section-title"><div className="eyebrow">Simulação solar</div><h2>Calculadora solar com captura de lead</h2><p>O cliente calcula a economia e os dados ficam salvos no Supabase para atendimento.</p></div><SolarCalculator/></div></section><section className="section" id="avaliacoes"><div className="container"><div className="section-title"><div className="eyebrow">Prova social</div><h2>Avaliações de clientes</h2><p>Área preparada para depoimentos reais, aprovação no admin e publicação no site.</p></div><div className="reviews">{reviews.map((r,i)=><div className="card" key={i}><div className="review-head"><img className="avatar" src={r[2]} alt={r[0]}/><div><b>{r[0]}</b><div className="stars">★★★★★</div></div></div><p style={{color:'#64748b',lineHeight:1.6}}>{r[1]}</p></div>)}</div></div></section><section className="section"><div className="container"><div className="cta"><div><h2 style={{margin:0}}>Quer orçamento técnico profissional?</h2><p>Fale com a ES Elétrica RJ e receba atendimento para sua casa, comércio ou empresa.</p></div><a className="btn btn-primary" href="https://wa.me/5521998415889" target="_blank">Chamar no WhatsApp</a></div></div></section></main>}
+
+export default function Home() {
+  return (
+    <main>
+      <section className="hero">
+        <div className="container">
+          <div>
+            <div className="eyebrow" style={{ color: '#ffdf66' }}>
+              Energia • Segurança • Automação
+            </div>
+
+            <h1>Projeto profissional para economizar, proteger e modernizar seu imóvel.</h1>
+
+            <p>
+              Site inspirado no projeto original da ES Elétrica RJ, agora com visual mais forte,
+              calculadora solar, captação de leads, avaliações reais, LGPD e integração segura
+              com Supabase.
+            </p>
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <a className="btn btn-primary" href="#calculadora">
+                Calcular energia solar
+              </a>
+
+              <a className="btn btn-outline" href="/stories">
+                Ver obras e stories
+              </a>
+            </div>
+
+            <div className="meter">
+              <div className="metric">
+                <b>95%</b>
+                <span>economia possível</span>
+              </div>
+
+              <div className="metric">
+                <b>5 anos</b>
+                <span>garantia instalação</span>
+              </div>
+
+              <div className="metric">
+                <b>RJ</b>
+                <span>Niterói e região</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="hero-card">
+            <h2>Atendimento técnico e comercial</h2>
+
+            <p>
+              Energia solar on-grid, instalações elétricas NBR 5410, CFTV, alarmes,
+              automação residencial e manutenção.
+            </p>
+
+            <div
+              className="card"
+              style={{ background: 'rgba(255,255,255,.95)', color: '#0f172a' }}
+            >
+              <b>Próximo passo:</b>
+              <br />
+              Faça a simulação, salve o lead no banco e receba atendimento da equipe.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section" id="servicos">
+        <div className="container">
+          <div className="section-title">
+            <div className="eyebrow">Áreas de atuação</div>
+            <h2>Soluções completas da ES Elétrica RJ</h2>
+            <p>
+              Baseado nas áreas do site de referência, com apresentação mais moderna,
+              responsiva e pronta para SEO.
+            </p>
+          </div>
+
+          <div className="services">
+            <div className="card service">
+              <div className="icon">☀️</div>
+              <h3>Energia Solar</h3>
+              <p>Projetos fotovoltaicos personalizados, homologação, instalação e suporte pós-venda.</p>
+            </div>
+
+            <div className="card service">
+              <div className="icon">⚡</div>
+              <h3>Instalações Elétricas</h3>
+              <p>Reformas, quadros, DR, DPS, aterramento, circuitos dedicados e padrão seguro.</p>
+            </div>
+
+            <div className="card service">
+              <div className="icon">🎥</div>
+              <h3>Segurança Eletrônica</h3>
+              <p>CFTV, alarmes, sensores, controle de acesso, concertina e monitoramento.</p>
+            </div>
+
+            <div className="card service">
+              <div className="icon">🏠</div>
+              <h3>Automação Residencial</h3>
+              <p>Iluminação, climatização, áudio, vídeo e controle inteligente pelo celular.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section" id="calculadora">
+        <div className="container">
+          <div className="section-title">
+            <div className="eyebrow">Simulação solar</div>
+            <h2>Calculadora solar com captura de lead</h2>
+            <p>O cliente calcula a economia e os dados ficam salvos no Supabase para atendimento.</p>
+          </div>
+
+          <SolarCalculator />
+        </div>
+      </section>
+
+      <section className="section" id="avaliacoes">
+        <div className="container">
+          <div className="section-title">
+            <div className="eyebrow">Prova social</div>
+            <h2>Avaliações de clientes</h2>
+            <p>
+              Avaliações reais enviadas por clientes. Elas só aparecem no site após aprovação
+              na área admin.
+            </p>
+          </div>
+
+          <PublicReviews />
+
+          <div style={{ marginTop: 20, textAlign: 'center' }}>
+            <a className="btn btn-outline" href="/avaliar">
+              Deixar uma avaliação
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="cta">
+            <div>
+              <h2 style={{ margin: 0 }}>Quer orçamento técnico profissional?</h2>
+              <p>
+                Fale com a ES Elétrica RJ e receba atendimento para sua casa, comércio ou empresa.
+              </p>
+            </div>
+
+            <a
+              className="btn btn-primary"
+              href="https://wa.me/5521998415889"
+              target="_blank"
+            >
+              Chamar no WhatsApp
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
