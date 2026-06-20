@@ -1,91 +1,401 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase, supabaseReady } from '@/lib/supabase';
 
-type Lead = { id: string; nome: string; telefone: string; email?: string; cidade?: string; endereco?: string; interesse?: string; mensagem?: string; conta_luz?: number; consentimento_lgpd?: boolean; origem?: string; status?: string; created_at?: string; };
-type Story = { id?: string; titulo: string; descricao: string; tipo: string; media_url: string; link_url: string; ativo: boolean; ordem: number; };
-type Banner = { id?: string; titulo: string; subtitulo: string; area: string; imagem_url: string; link_url: string; ativo: boolean; };
-type UpdatePost = { id?: string; titulo: string; conteudo: string; categoria: string; ativo: boolean; };
-type CheckoutConfig = { id?: string; pix_chave: string; whatsapp: string; checkout_url: string; mensagem_padrao: string; ativo: boolean; };
-type AnalyticsRow = { path: string; total: number; };
+type Lead = any;
+type Avaliacao = any;
+type Banner = any;
+type Story = any;
 
-const statusOptions = [['novo','Novo'],['em_contato','Em contato'],['orcamento_enviado','Orçamento enviado'],['fechado','Fechado'],['perdido','Perdido']];
-const emptyStory: Story = { titulo:'', descricao:'', tipo:'imagem', media_url:'', link_url:'', ativo:true, ordem:1 };
-const emptyBanner: Banner = { titulo:'', subtitulo:'', area:'home_topo', imagem_url:'', link_url:'', ativo:true };
-const emptyUpdate: UpdatePost = { titulo:'', conteudo:'', categoria:'Novidade', ativo:true };
-const emptyCheckout: CheckoutConfig = { pix_chave:'', whatsapp:'5521998415889', checkout_url:'', mensagem_padrao:'Olá! Quero fechar meu orçamento com a ES Elétrica RJ.', ativo:true };
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: 10,
+  border: '1px solid #cbd5e1',
+  borderRadius: 10,
+  marginTop: 6,
+};
 
-export default function AdminPage(){
-  const [tab,setTab]=useState<'leads'|'stories'|'banners'|'updates'|'analytics'|'checkout'>('leads');
-  const [email,setEmail]=useState(''); const [senha,setSenha]=useState(''); const [session,setSession]=useState<any>(null);
-  const [msg,setMsg]=useState(''); const [erro,setErro]=useState('');
-  const [leads,setLeads]=useState<Lead[]>([]); const [stories,setStories]=useState<Story[]>([]); const [banners,setBanners]=useState<Banner[]>([]); const [updates,setUpdates]=useState<UpdatePost[]>([]);
-  const [checkout,setCheckout]=useState<CheckoutConfig>(emptyCheckout); const [analytics,setAnalytics]=useState<AnalyticsRow[]>([]); const [online,setOnline]=useState(0); const [ultimoAcesso,setUltimoAcesso]=useState('');
-  const [storyForm,setStoryForm]=useState<Story>(emptyStory); const [bannerForm,setBannerForm]=useState<Banner>(emptyBanner); const [updateForm,setUpdateForm]=useState<UpdatePost>(emptyUpdate);
+const btn: React.CSSProperties = {
+  padding: '10px 14px',
+  border: 0,
+  borderRadius: 10,
+  background: '#0e67ff',
+  color: '#fff',
+  fontWeight: 800,
+  cursor: 'pointer',
+};
 
-  useEffect(()=>{ if(!supabaseReady||!supabase)return; supabase.auth.getSession().then(({data})=>{ setSession(data.session); if(data.session) carregarTudo(); }); },[]);
+const danger: React.CSSProperties = {
+  ...btn,
+  background: '#dc2626',
+};
 
-  async function login(e:any){ e.preventDefault(); setErro(''); setMsg(''); if(!supabaseReady||!supabase){setErro('Supabase não configurado no .env.local.'); return;} const {data,error}=await supabase.auth.signInWithPassword({email,password:senha}); if(error){setErro(error.message); return;} setSession(data.session); setMsg('Login realizado com sucesso.'); carregarTudo(); }
-  async function sair(){ await supabase?.auth.signOut(); setSession(null); }
-  async function carregarTudo(){ await Promise.all([carregarLeads(),carregarStories(),carregarBanners(),carregarUpdates(),carregarCheckout(),carregarAnalytics()]); }
+const card: React.CSSProperties = {
+  background: '#fff',
+  border: '1px solid #e2e8f0',
+  borderRadius: 16,
+  padding: 16,
+  marginBottom: 16,
+};
 
-  async function carregarLeads(){ if(!supabase)return; const {data,error}=await supabase.from('leads').select('*').order('created_at',{ascending:false}).limit(200); if(error){setErro(error.message); return;} setLeads(data||[]); }
-  async function atualizarStatusLead(id:string,status:string){ if(!supabase)return; const {error}=await supabase.from('leads').update({status}).eq('id',id); if(error){alert(error.message);return;} carregarLeads(); }
-  async function carregarStories(){ if(!supabase)return; const {data}=await supabase.from('site_stories').select('*').order('ordem',{ascending:true}); setStories(data||[]); }
-  async function salvarStory(e:any){ e.preventDefault(); if(!supabase)return; const {error}=await supabase.from('site_stories').insert(storyForm); if(error){alert(error.message);return;} setStoryForm(emptyStory); carregarStories(); }
-  async function excluirStory(id?:string){ if(!id||!supabase)return; if(!confirm('Excluir este story?'))return; const {error}=await supabase.from('site_stories').delete().eq('id',id); if(error)alert(error.message); carregarStories(); }
-  async function carregarBanners(){ if(!supabase)return; const {data}=await supabase.from('site_banners').select('*').order('created_at',{ascending:false}); setBanners(data||[]); }
-  async function salvarBanner(e:any){ e.preventDefault(); if(!supabase)return; const {error}=await supabase.from('site_banners').insert(bannerForm); if(error){alert(error.message);return;} setBannerForm(emptyBanner); carregarBanners(); }
-  async function excluirBanner(id?:string){ if(!id||!supabase)return; if(!confirm('Excluir este banner?'))return; const {error}=await supabase.from('site_banners').delete().eq('id',id); if(error)alert(error.message); carregarBanners(); }
-  async function carregarUpdates(){ if(!supabase)return; const {data}=await supabase.from('site_updates').select('*').order('created_at',{ascending:false}); setUpdates(data||[]); }
-  async function salvarUpdate(e:any){ e.preventDefault(); if(!supabase)return; const {error}=await supabase.from('site_updates').insert(updateForm); if(error){alert(error.message);return;} setUpdateForm(emptyUpdate); carregarUpdates(); }
-  async function excluirUpdate(id?:string){ if(!id||!supabase)return; if(!confirm('Excluir esta atualização?'))return; const {error}=await supabase.from('site_updates').delete().eq('id',id); if(error)alert(error.message); carregarUpdates(); }
-  async function carregarCheckout(){ if(!supabase)return; const {data}=await supabase.from('checkout_config').select('*').limit(1).maybeSingle(); if(data)setCheckout(data); }
-  async function salvarCheckout(e:any){ e.preventDefault(); if(!supabase)return; const {error}=checkout.id? await supabase.from('checkout_config').update(checkout).eq('id',checkout.id) : await supabase.from('checkout_config').insert(checkout); if(error){alert(error.message);return;} alert('Checkout atualizado.'); carregarCheckout(); }
-  async function carregarAnalytics(){ if(!supabase)return; const {data:eventos}=await supabase.from('site_events').select('path, created_at').order('created_at',{ascending:false}).limit(1000); const contagem:Record<string,number>={}; (eventos||[]).forEach((e:any)=>{contagem[e.path||'/']=(contagem[e.path||'/']||0)+1}); setAnalytics(Object.entries(contagem).map(([path,total])=>({path,total})).sort((a,b)=>b.total-a.total).slice(0,10)); if(eventos?.[0]?.created_at)setUltimoAcesso(new Date(eventos[0].created_at).toLocaleString('pt-BR')); const cincoMin=new Date(Date.now()-5*60*1000).toISOString(); const {count}=await supabase.from('site_events').select('*',{count:'exact',head:true}).gte('created_at',cincoMin); setOnline(count||0); }
+export default function AdminPage() {
+  const [session, setSession] = useState<any>(null);
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [tab, setTab] = useState<'leads'|'avaliacoes'|'stories'|'banners'>('leads');
 
-  const totalLeads=leads.length; const leadsFechados=useMemo(()=>leads.filter(l=>l.status==='fechado').length,[leads]); const leadsNovos=useMemo(()=>leads.filter(l=>!l.status||l.status==='novo').length,[leads]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
 
-  if(!session){ return <main style={loginWrap}><form onSubmit={login} style={loginCard}><div style={logoMini}>ES</div><h1 style={{margin:0}}>Área Admin</h1><p style={{color:'#64748b'}}>Acesso protegido por Supabase Auth.</p><label style={label}>E-mail</label><input style={input} type="email" value={email} onChange={e=>setEmail(e.target.value)} required/><label style={label}>Senha</label><input style={input} type="password" value={senha} onChange={e=>setSenha(e.target.value)} required/><button style={primaryBtn}>Entrar</button>{erro&&<p style={{color:'#b91c1c'}}>{erro}</p>}{msg&&<p style={{color:'#047857'}}>{msg}</p>}<small style={{color:'#94a3b8'}}>Crie o usuário em Supabase → Authentication → Users.</small></form></main> }
+  const [storyForm, setStoryForm] = useState({
+    titulo: '',
+    descricao: '',
+    tipo: 'imagem',
+    media_url: '',
+    link_url: '',
+    ativo: true,
+    publicado: true,
+    ordem: 1,
+  });
 
-  return <main style={adminShell}><aside style={sidebar}><h2 style={{marginTop:0}}>ES Admin</h2><p style={{color:'#cbd5e1'}}>Leads, stories, banners, atualizações, analytics e checkout.</p><button style={navBtn(tab==='leads')} onClick={()=>setTab('leads')}>Leads</button><button style={navBtn(tab==='stories')} onClick={()=>setTab('stories')}>Stories / Vídeos</button><button style={navBtn(tab==='banners')} onClick={()=>setTab('banners')}>Banners</button><button style={navBtn(tab==='updates')} onClick={()=>setTab('updates')}>Atualizações</button><button style={navBtn(tab==='analytics')} onClick={()=>setTab('analytics')}>Acessos</button><button style={navBtn(tab==='checkout')} onClick={()=>setTab('checkout')}>Checkout</button><button style={dangerBtn} onClick={sair}>Sair</button></aside><section style={content}><div style={topCards}><div style={statCard}><small>Total leads</small><strong>{totalLeads}</strong></div><div style={statCard}><small>Novos</small><strong>{leadsNovos}</strong></div><div style={statCard}><small>Fechados</small><strong>{leadsFechados}</strong></div><div style={statCard}><small>Online agora</small><strong>{online}</strong></div></div>{erro&&<div style={alertBox}>{erro}</div>}
-    {tab==='leads'&&<section style={panel}><div style={panelHead}><div><h1>Controle de leads</h1><p style={{color:'#64748b'}}>Atualize status e chame o cliente por WhatsApp, ligação ou e-mail.</p></div><button style={primaryBtnSmall} onClick={carregarLeads}>Atualizar leads</button></div><div style={{overflowX:'auto'}}><table style={table}><thead><tr><th style={th}>Data</th><th style={th}>Nome</th><th style={th}>Contato</th><th style={th}>Cidade</th><th style={th}>Conta</th><th style={th}>Status</th><th style={th}>Ações</th></tr></thead><tbody>{leads.map(lead=>{const phone=String(lead.telefone||'').replace(/\D/g,''); const phoneBR=phone.startsWith('55')?phone:`55${phone}`; const waText=encodeURIComponent(`Olá, ${lead.nome}. Aqui é da ES Elétrica RJ. Recebemos sua simulação pelo site e queremos te ajudar com o orçamento.`); return <tr key={lead.id}><td style={td}>{lead.created_at?new Date(lead.created_at).toLocaleDateString('pt-BR'):'-'}</td><td style={td}><b>{lead.nome}</b><br/><small>{lead.email||'-'}</small></td><td style={td}>{lead.telefone||'-'}</td><td style={td}>{lead.cidade||'-'}</td><td style={td}>{money(lead.conta_luz)}</td><td style={td}><select value={lead.status||'novo'} onChange={e=>atualizarStatusLead(lead.id,e.target.value)} style={select}>{statusOptions.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></td><td style={td}><div style={{display:'flex',gap:6,flexWrap:'wrap'}}><a style={smallAction} href={`https://wa.me/${phoneBR}?text=${waText}`} target="_blank">WhatsApp</a><a style={smallAction} href={`tel:+${phoneBR}`}>Ligar</a>{lead.email&&<a style={smallAction} href={`mailto:${lead.email}?subject=ES Elétrica RJ - Orçamento&body=${waText}`}>E-mail</a>}</div></td></tr>})}</tbody></table>{!leads.length&&<p>Nenhum lead encontrado.</p>}</div></section>}
-    {tab==='stories'&&<section style={panel}><h1>Stories e vídeos</h1><p style={{color:'#64748b'}}>Cadastre imagem ou vídeo usando uma URL pública. Depois podemos evoluir para upload direto no Storage.</p><form onSubmit={salvarStory} style={gridForm}><input style={input} placeholder="Título" value={storyForm.titulo} onChange={e=>setStoryForm({...storyForm,titulo:e.target.value})} required/><select style={input} value={storyForm.tipo} onChange={e=>setStoryForm({...storyForm,tipo:e.target.value})}><option value="imagem">Imagem</option><option value="video">Vídeo</option></select><input style={input} placeholder="URL da imagem ou vídeo" value={storyForm.media_url} onChange={e=>setStoryForm({...storyForm,media_url:e.target.value})} required/><input style={input} placeholder="Link do botão" value={storyForm.link_url} onChange={e=>setStoryForm({...storyForm,link_url:e.target.value})}/><input style={input} placeholder="Descrição" value={storyForm.descricao} onChange={e=>setStoryForm({...storyForm,descricao:e.target.value})}/><input style={input} type="number" placeholder="Ordem" value={storyForm.ordem} onChange={e=>setStoryForm({...storyForm,ordem:Number(e.target.value)})}/><button style={primaryBtnSmall}>Salvar story</button></form><div style={cardsGrid}>{stories.map(s=><div key={s.id} style={miniCard}><b>{s.titulo}</b><p>{s.tipo}</p><small>{s.media_url}</small><button style={dangerBtnSmall} onClick={()=>excluirStory(s.id)}>Excluir</button></div>)}</div></section>}
-    {tab==='banners'&&<section style={panel}><h1>Banners por área do site</h1><form onSubmit={salvarBanner} style={gridForm}><input style={input} placeholder="Título" value={bannerForm.titulo} onChange={e=>setBannerForm({...bannerForm,titulo:e.target.value})} required/><input style={input} placeholder="Subtítulo" value={bannerForm.subtitulo} onChange={e=>setBannerForm({...bannerForm,subtitulo:e.target.value})}/><select style={input} value={bannerForm.area} onChange={e=>setBannerForm({...bannerForm,area:e.target.value})}><option value="home_topo">Home topo</option><option value="calculadora">Calculadora</option><option value="servicos">Serviços</option><option value="stories">Stories</option></select><input style={input} placeholder="URL da imagem" value={bannerForm.imagem_url} onChange={e=>setBannerForm({...bannerForm,imagem_url:e.target.value})}/><input style={input} placeholder="Link" value={bannerForm.link_url} onChange={e=>setBannerForm({...bannerForm,link_url:e.target.value})}/><button style={primaryBtnSmall}>Salvar banner</button></form><div style={cardsGrid}>{banners.map(b=><div key={b.id} style={miniCard}><b>{b.area}</b><h3>{b.titulo}</h3><p>{b.subtitulo}</p><button style={dangerBtnSmall} onClick={()=>excluirBanner(b.id)}>Excluir</button></div>)}</div></section>}
-    {tab==='updates'&&<section style={panel}><h1>Atualizações interativas</h1><form onSubmit={salvarUpdate} style={gridForm}><input style={input} placeholder="Título" value={updateForm.titulo} onChange={e=>setUpdateForm({...updateForm,titulo:e.target.value})} required/><input style={input} placeholder="Categoria" value={updateForm.categoria} onChange={e=>setUpdateForm({...updateForm,categoria:e.target.value})}/><textarea style={{...input,minHeight:110}} placeholder="Conteúdo" value={updateForm.conteudo} onChange={e=>setUpdateForm({...updateForm,conteudo:e.target.value})} required/><button style={primaryBtnSmall}>Publicar atualização</button></form><div style={cardsGrid}>{updates.map(u=><div key={u.id} style={miniCard}><small>{u.categoria}</small><h3>{u.titulo}</h3><p>{u.conteudo}</p><button style={dangerBtnSmall} onClick={()=>excluirUpdate(u.id)}>Excluir</button></div>)}</div></section>}
-    {tab==='analytics'&&<section style={panel}><div style={panelHead}><div><h1>Gráficos de acesso</h1><p style={{color:'#64748b'}}>Último acesso: {ultimoAcesso||'-'}</p></div><button style={primaryBtnSmall} onClick={carregarAnalytics}>Atualizar acessos</button></div><div style={cardsGrid}>{analytics.map(row=><div key={row.path} style={miniCard}><b>{row.path}</b><div style={barOuter}><div style={{...barInner,width:`${Math.min(100,row.total*8)}%`}}/></div><p>{row.total} acessos recentes</p></div>)}</div></section>}
-    {tab==='checkout'&&<section style={panel}><h1>Configurar checkout</h1><p style={{color:'#64748b'}}>Configure Pix, WhatsApp e link de pagamento externo.</p><form onSubmit={salvarCheckout} style={gridForm}><input style={input} placeholder="Chave PIX" value={checkout.pix_chave} onChange={e=>setCheckout({...checkout,pix_chave:e.target.value})}/><input style={input} placeholder="WhatsApp com DDI" value={checkout.whatsapp} onChange={e=>setCheckout({...checkout,whatsapp:e.target.value})}/><input style={input} placeholder="URL checkout/pagamento" value={checkout.checkout_url} onChange={e=>setCheckout({...checkout,checkout_url:e.target.value})}/><textarea style={{...input,minHeight:110}} placeholder="Mensagem padrão" value={checkout.mensagem_padrao} onChange={e=>setCheckout({...checkout,mensagem_padrao:e.target.value})}/><button style={primaryBtnSmall}>Salvar checkout</button></form></section>}
-  </section></main>;
+  const [bannerForm, setBannerForm] = useState({
+    titulo: '',
+    subtitulo: '',
+    area: 'home_topo',
+    imagem_url: '',
+    link_url: '',
+    ativo: true,
+    publicado: true,
+  });
+
+  useEffect(() => {
+    if (!supabaseReady || !supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      if (data.session) carregarTudo();
+    });
+  }, []);
+
+  async function login(e: any) {
+    e.preventDefault();
+    setErro('');
+
+    if (!supabaseReady || !supabase) {
+      setErro('Supabase não configurado.');
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+
+    if (error) {
+      setErro(error.message);
+      return;
+    }
+
+    setSession(data.session);
+    carregarTudo();
+  }
+
+  async function sair() {
+    await supabase?.auth.signOut();
+    setSession(null);
+  }
+
+  async function carregarTudo() {
+    await Promise.all([carregarLeads(), carregarAvaliacoes(), carregarStories(), carregarBanners()]);
+  }
+
+  async function carregarLeads() {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+    if (error) {
+      console.log(error);
+      setErro(error.message);
+      return;
+    }
+    setLeads(data || []);
+  }
+
+  async function atualizarLead(id: string, status: string) {
+    if (!supabase) return;
+    const { error } = await supabase.from('leads').update({ status }).eq('id', id);
+    if (error) alert(error.message);
+    carregarLeads();
+  }
+
+  async function carregarAvaliacoes() {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('avaliacoes').select('*').order('created_at', { ascending: false });
+    if (error) {
+      console.log(error);
+      setErro(error.message);
+      return;
+    }
+    setAvaliacoes(data || []);
+  }
+
+  async function aprovarAvaliacao(id: string) {
+    if (!supabase) return;
+    const { error } = await supabase.from('avaliacoes').update({ aprovado: true, status: 'aprovado' }).eq('id', id);
+    if (error) alert(error.message);
+    carregarAvaliacoes();
+  }
+
+  async function reprovarAvaliacao(id: string) {
+    if (!supabase) return;
+    const { error } = await supabase.from('avaliacoes').update({ aprovado: false, status: 'reprovado' }).eq('id', id);
+    if (error) alert(error.message);
+    carregarAvaliacoes();
+  }
+
+  async function excluirAvaliacao(id: string) {
+    if (!supabase || !confirm('Excluir avaliação?')) return;
+    const { error } = await supabase.from('avaliacoes').delete().eq('id', id);
+    if (error) alert(error.message);
+    carregarAvaliacoes();
+  }
+
+  async function carregarStories() {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('site_stories').select('*').order('ordem', { ascending: true });
+    if (error) {
+      console.log(error);
+      setErro(error.message);
+      return;
+    }
+    setStories(data || []);
+  }
+
+  async function salvarStory(e: any) {
+    e.preventDefault();
+    if (!supabase) return;
+    const { error } = await supabase.from('site_stories').insert(storyForm);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    setStoryForm({ titulo: '', descricao: '', tipo: 'imagem', media_url: '', link_url: '', ativo: true, publicado: true, ordem: 1 });
+    carregarStories();
+  }
+
+  async function excluirStory(id: string) {
+    if (!supabase || !confirm('Excluir story?')) return;
+    const { error } = await supabase.from('site_stories').delete().eq('id', id);
+    if (error) alert(error.message);
+    carregarStories();
+  }
+
+  async function carregarBanners() {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('site_banners').select('*').order('created_at', { ascending: false });
+    if (error) {
+      console.log(error);
+      setErro(error.message);
+      return;
+    }
+    setBanners(data || []);
+  }
+
+  async function salvarBanner(e: any) {
+    e.preventDefault();
+    if (!supabase) return;
+    const { error } = await supabase.from('site_banners').insert(bannerForm);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    setBannerForm({ titulo: '', subtitulo: '', area: 'home_topo', imagem_url: '', link_url: '', ativo: true, publicado: true });
+    carregarBanners();
+  }
+
+  async function excluirBanner(id: string) {
+    if (!supabase || !confirm('Excluir banner?')) return;
+    const { error } = await supabase.from('site_banners').delete().eq('id', id);
+    if (error) alert(error.message);
+    carregarBanners();
+  }
+
+  if (!session) {
+    return (
+      <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#001f3f' }}>
+        <form onSubmit={login} style={{ width: 420, maxWidth: '92vw', background: '#fff', padding: 28, borderRadius: 20 }}>
+          <h1>Admin ES Elétrica RJ</h1>
+          <p>Acesso protegido por Supabase Auth.</p>
+
+          <label>E-mail</label>
+          <input style={inputStyle} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+
+          <label>Senha</label>
+          <input style={inputStyle} type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
+
+          <button style={{ ...btn, width: '100%', marginTop: 16 }}>Entrar</button>
+          {erro && <p style={{ color: '#b91c1c' }}>{erro}</p>}
+        </form>
+      </main>
+    );
+  }
+
+  return (
+    <main style={{ minHeight: '100vh', background: '#f1f5f9', display: 'grid', gridTemplateColumns: '250px 1fr' }}>
+      <aside style={{ background: '#001f3f', color: '#fff', padding: 20 }}>
+        <h2>ES Admin</h2>
+        <button style={nav(tab === 'leads')} onClick={() => setTab('leads')}>Leads</button>
+        <button style={nav(tab === 'avaliacoes')} onClick={() => setTab('avaliacoes')}>Avaliações</button>
+        <button style={nav(tab === 'stories')} onClick={() => setTab('stories')}>Stories</button>
+        <button style={nav(tab === 'banners')} onClick={() => setTab('banners')}>Banners</button>
+        <button style={danger} onClick={sair}>Sair</button>
+      </aside>
+
+      <section style={{ padding: 22 }}>
+        {erro && <div style={{ ...card, color: '#b91c1c' }}>{erro}</div>}
+
+        {tab === 'leads' && (
+          <div style={card}>
+            <h1>Leads</h1>
+            <button style={btn} onClick={carregarLeads}>Atualizar</button>
+            <div style={{ overflowX: 'auto', marginTop: 16 }}>
+              <table style={{ width: '100%', minWidth: 850 }}>
+                <thead><tr><th>Nome</th><th>Telefone</th><th>Cidade</th><th>Conta</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody>
+                  {leads.map((l) => {
+                    const phone = String(l.telefone || '').replace(/\D/g, '');
+                    const phoneBR = phone.startsWith('55') ? phone : `55${phone}`;
+                    return (
+                      <tr key={l.id}>
+                        <td>{l.nome}</td>
+                        <td>{l.telefone}</td>
+                        <td>{l.cidade}</td>
+                        <td>{l.conta_luz || l.conta || '-'}</td>
+                        <td>
+                          <select value={l.status || 'novo'} onChange={(e) => atualizarLead(l.id, e.target.value)}>
+                            <option value="novo">Novo</option>
+                            <option value="em_contato">Em contato</option>
+                            <option value="orcamento_enviado">Orçamento enviado</option>
+                            <option value="fechado">Fechado</option>
+                            <option value="perdido">Perdido</option>
+                          </select>
+                        </td>
+                        <td>
+                          <a href={`https://wa.me/${phoneBR}`} target="_blank">WhatsApp</a> | <a href={`tel:+${phoneBR}`}>Ligar</a>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {!leads.length && <p>Nenhum lead encontrado.</p>}
+            </div>
+          </div>
+        )}
+
+        {tab === 'avaliacoes' && (
+          <div style={card}>
+            <h1>Avaliações pendentes e publicadas</h1>
+            <button style={btn} onClick={carregarAvaliacoes}>Atualizar avaliações</button>
+            <div style={{ overflowX: 'auto', marginTop: 16 }}>
+              <table style={{ width: '100%', minWidth: 980 }}>
+                <thead><tr><th>Cliente</th><th>Nota</th><th>Comentário</th><th>Foto/Mídia</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody>
+                  {avaliacoes.map((a) => (
+                    <tr key={a.id}>
+                      <td>{a.nome}<br/><small>{a.email} • {a.cidade}</small></td>
+                      <td>{'★'.repeat(Number(a.nota || 5))}</td>
+                      <td>{a.comentario}</td>
+                      <td>
+                        {a.foto_url && <img src={a.foto_url} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />}
+                        {a.media_url && <a href={a.media_url} target="_blank"> Ver mídia</a>}
+                      </td>
+                      <td>{a.status || 'pendente'}</td>
+                      <td>
+                        <button style={btn} onClick={() => aprovarAvaliacao(a.id)}>Aprovar</button>{' '}
+                        <button style={danger} onClick={() => reprovarAvaliacao(a.id)}>Reprovar</button>{' '}
+                        <button style={danger} onClick={() => excluirAvaliacao(a.id)}>Excluir</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!avaliacoes.length && <p>Nenhuma avaliação encontrada. Confira se o SQL criou a tabela `avaliacoes` e as policies para authenticated.</p>}
+            </div>
+          </div>
+        )}
+
+        {tab === 'stories' && (
+          <div style={card}>
+            <h1>Stories / vídeos</h1>
+            <form onSubmit={salvarStory} style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
+              <input style={inputStyle} placeholder="Título" value={storyForm.titulo} onChange={(e) => setStoryForm({ ...storyForm, titulo: e.target.value })} required />
+              <select style={inputStyle} value={storyForm.tipo} onChange={(e) => setStoryForm({ ...storyForm, tipo: e.target.value })}>
+                <option value="imagem">Imagem</option>
+                <option value="video">Vídeo</option>
+              </select>
+              <input style={inputStyle} placeholder="URL da imagem ou vídeo" value={storyForm.media_url} onChange={(e) => setStoryForm({ ...storyForm, media_url: e.target.value })} required />
+              <input style={inputStyle} placeholder="Link" value={storyForm.link_url} onChange={(e) => setStoryForm({ ...storyForm, link_url: e.target.value })} />
+              <input style={inputStyle} placeholder="Descrição" value={storyForm.descricao} onChange={(e) => setStoryForm({ ...storyForm, descricao: e.target.value })} />
+              <input style={inputStyle} type="number" placeholder="Ordem" value={storyForm.ordem} onChange={(e) => setStoryForm({ ...storyForm, ordem: Number(e.target.value) })} />
+              <button style={btn}>Salvar story</button>
+            </form>
+
+            {stories.map((s) => (
+              <div key={s.id} style={{ ...card, marginTop: 12 }}>
+                <b>{s.titulo}</b> — {s.tipo} — {s.ativo || s.publicado ? 'Publicado' : 'Oculto'}
+                <br/><small>{s.media_url || s.imagem_url}</small>
+                <br/><button style={danger} onClick={() => excluirStory(s.id)}>Excluir</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'banners' && (
+          <div style={card}>
+            <h1>Banners</h1>
+            <form onSubmit={salvarBanner} style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
+              <input style={inputStyle} placeholder="Título" value={bannerForm.titulo} onChange={(e) => setBannerForm({ ...bannerForm, titulo: e.target.value })} required />
+              <input style={inputStyle} placeholder="Subtítulo" value={bannerForm.subtitulo} onChange={(e) => setBannerForm({ ...bannerForm, subtitulo: e.target.value })} />
+              <select style={inputStyle} value={bannerForm.area} onChange={(e) => setBannerForm({ ...bannerForm, area: e.target.value })}>
+                <option value="home_topo">Home topo</option>
+                <option value="calculadora">Calculadora</option>
+                <option value="servicos">Serviços</option>
+                <option value="stories">Stories</option>
+              </select>
+              <input style={inputStyle} placeholder="URL imagem" value={bannerForm.imagem_url} onChange={(e) => setBannerForm({ ...bannerForm, imagem_url: e.target.value })} />
+              <input style={inputStyle} placeholder="Link" value={bannerForm.link_url} onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })} />
+              <button style={btn}>Salvar banner</button>
+            </form>
+
+            {banners.map((b) => (
+              <div key={b.id} style={{ ...card, marginTop: 12 }}>
+                <b>{b.area}</b> — {b.titulo} — {b.ativo || b.publicado ? 'Publicado' : 'Oculto'}
+                <br/><small>{b.imagem_url}</small>
+                <br/><button style={danger} onClick={() => excluirBanner(b.id)}>Excluir</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
 }
 
-function money(v?:number){ if(!v)return '-'; return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-const loginWrap:CSSProperties={minHeight:'100vh',display:'grid',placeItems:'center',background:'linear-gradient(135deg,#001f3f,#0e67ff)'};
-const loginCard:CSSProperties={width:'min(440px,92vw)',background:'#fff',borderRadius:22,padding:28,boxShadow:'0 30px 90px rgba(0,0,0,.28)'};
-const logoMini:CSSProperties={width:58,height:58,borderRadius:16,background:'#facc15',display:'grid',placeItems:'center',fontWeight:900,color:'#001f3f',marginBottom:12};
-const label:CSSProperties={display:'block',fontSize:12,fontWeight:800,color:'#64748b',marginTop:12,textTransform:'uppercase'};
-const input:CSSProperties={width:'100%',padding:12,border:'1px solid #cbd5e1',borderRadius:10,marginTop:6,fontSize:14};
-const primaryBtn:CSSProperties={width:'100%',padding:13,border:0,borderRadius:12,background:'#0e67ff',color:'#fff',fontWeight:900,marginTop:16,cursor:'pointer'};
-const primaryBtnSmall:CSSProperties={padding:'10px 14px',border:0,borderRadius:10,background:'#0e67ff',color:'#fff',fontWeight:900,cursor:'pointer'};
-const dangerBtn:CSSProperties={padding:12,border:0,borderRadius:10,background:'#dc2626',color:'#fff',fontWeight:900,cursor:'pointer',marginTop:16};
-const dangerBtnSmall:CSSProperties={padding:'8px 10px',border:0,borderRadius:8,background:'#fee2e2',color:'#b91c1c',fontWeight:800,cursor:'pointer',marginTop:10};
-const adminShell:CSSProperties={minHeight:'100vh',display:'grid',gridTemplateColumns:'260px 1fr',background:'#f1f5f9'};
-const sidebar:CSSProperties={background:'#001f3f',color:'#fff',padding:22};
-const content:CSSProperties={padding:22,overflowX:'hidden'};
-const topCards:CSSProperties={display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:12,marginBottom:16};
-const statCard:CSSProperties={background:'#fff',border:'1px solid #e2e8f0',borderRadius:16,padding:18,display:'grid',gap:6};
-const panel:CSSProperties={background:'#fff',border:'1px solid #e2e8f0',borderRadius:18,padding:20,boxShadow:'0 10px 30px rgba(15,23,42,.05)'};
-const panelHead:CSSProperties={display:'flex',justifyContent:'space-between',gap:16,alignItems:'center',marginBottom:12};
-const table:CSSProperties={width:'100%',borderCollapse:'collapse',minWidth:980};
-const th:CSSProperties={textAlign:'left',padding:12,borderBottom:'1px solid #e2e8f0',fontSize:12,color:'#475569'};
-const td:CSSProperties={padding:12,borderBottom:'1px solid #e2e8f0',verticalAlign:'top',fontSize:14};
-const select:CSSProperties={padding:8,borderRadius:8,border:'1px solid #cbd5e1'};
-const smallAction:CSSProperties={display:'inline-block',padding:'7px 9px',borderRadius:8,background:'#eff6ff',color:'#0e67ff',fontWeight:800,textDecoration:'none',fontSize:12};
-const gridForm:CSSProperties={display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:12,margin:'14px 0 18px'};
-const cardsGrid:CSSProperties={display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:12};
-const miniCard:CSSProperties={background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:14,padding:14,wordBreak:'break-word'};
-const alertBox:CSSProperties={background:'#fee2e2',color:'#991b1b',border:'1px solid #fecaca',padding:12,borderRadius:12,marginBottom:12};
-const barOuter:CSSProperties={width:'100%',height:10,borderRadius:999,background:'#e2e8f0',overflow:'hidden',marginTop:10};
-const barInner:CSSProperties={height:'100%',background:'#0e67ff',borderRadius:999};
-const navBtn=(active:boolean):CSSProperties=>({width:'100%',display:'block',padding:12,border:0,borderRadius:10,marginTop:8,textAlign:'left',cursor:'pointer',fontWeight:900,color:active?'#001f3f':'#e2e8f0',background:active?'#facc15':'rgba(255,255,255,.08)'});
+function nav(active: boolean): React.CSSProperties {
+  return {
+    width: '100%',
+    display: 'block',
+    padding: 12,
+    marginBottom: 8,
+    border: 0,
+    borderRadius: 10,
+    background: active ? '#facc15' : 'rgba(255,255,255,.1)',
+    color: active ? '#001f3f' : '#fff',
+    fontWeight: 800,
+    cursor: 'pointer',
+  };
+}
