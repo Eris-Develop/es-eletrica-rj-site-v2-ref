@@ -15,16 +15,20 @@ function getVisitorId() {
 
 export default function AnalyticsTracker() {
   useEffect(() => {
-    async function track() {
-      if (!supabaseReady || !supabase || typeof window === 'undefined') return;
-      await supabase.from('site_events').insert({
+    async function registrar() {
+      if (!supabaseReady || !supabase) return;
+
+      await supabase.from('site_visits').insert({
+        visitor_id: getVisitorId(),
         path: window.location.pathname,
+        url: window.location.href,
         referrer: document.referrer || '',
         user_agent: navigator.userAgent || '',
-        visitor_id: getVisitorId(),
+        online_until: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       });
     }
-    track();
+
+    registrar();
   }, []);
 
   return null;

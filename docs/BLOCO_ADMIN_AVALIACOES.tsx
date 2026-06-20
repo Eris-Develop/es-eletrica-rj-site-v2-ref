@@ -4,6 +4,8 @@
 // const [tab, setTab] = useState<'leads'|'avaliacoes'|'stories'|'banners'|'updates'|'analytics'|'checkout'>('leads');
 
 // 2) Adicione estes type/state/funções dentro do componente AdminPage:
+'use client'
+import { useState } from 'react';
 
 type Avaliacao = {
   id: string;

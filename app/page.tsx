@@ -1,3 +1,5 @@
+
+import PublicBanners from '@/components/PublicBanners';
 import PublicReviews from '@/components/PublicReviews';
 import SolarCalculator from '@/components/SolarCalculator';
 
@@ -5,10 +7,13 @@ export default function Home() {
   return (
     <main>
       <section className="hero">
+<PublicBanners area="home_topo" />
         <div className="container">
+
           <div>
             <div className="eyebrow" style={{ color: '#ffdf66' }}>
               Energia • Segurança • Automação
+              <PublicBanners area="home_topo" />
             </div>
 
             <h1>Projeto profissional para economizar, proteger e modernizar seu imóvel.</h1>
@@ -65,6 +70,7 @@ export default function Home() {
             </div>
           </div>
         </div>
+
       </section>
 
       <section className="section" id="servicos">
