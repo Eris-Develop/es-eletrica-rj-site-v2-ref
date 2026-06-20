@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { supabase, supabaseReady } from '@/lib/supabase';
+import { useEffect, useMemo, useState } from 'react';
 import './admin-premium.css';
 
 type Any = any;
@@ -32,12 +32,25 @@ export default function AdminPage() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
-  const [tab, setTab] = useState<'leads'|'avaliacoes'|'stories'|'banners'>('leads');
+  const [tab, setTab] = useState<'leads'|'avaliacoes'|'stories'|'banners'|'aparencia'|'visitas'>('leads');
 
   const [leads, setLeads] = useState<Any[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<Any[]>([]);
   const [stories, setStories] = useState<Any[]>([]);
   const [banners, setBanners] = useState<Any[]>([]);
+
+  const [settings, setSettings] = useState<any>({
+  id: 1,
+  logo_url: '',
+  home_banner_url: '',
+  home_banner_position: 'center',
+  hero_card_image_url: '',
+  background_home: '#ffffff',
+  background_stories: '#ffffff',
+  background_reviews: '#ffffff',
+});
+
+const [visitas, setVisitas] = useState<any[]>([]);
 
   const [storyForm, setStoryForm] = useState({ titulo:'', descricao:'', tipo:'imagem', media_url:'', link_url:'', ativo:true, publicado:true, ordem:1, fonte:'Arial', cor_texto:'#0f172a', tamanho_texto:'16' });
   const [bannerForm, setBannerForm] = useState({ titulo:'', subtitulo:'', area:'home_topo', imagem_url:'', link_url:'', ativo:true, publicado:true, modo_exibicao:'banner', fonte:'Arial', cor_texto:'#ffffff', tamanho_texto:'26' });
@@ -58,7 +71,14 @@ export default function AdminPage() {
     setSession(data.session); carregarTudo();
   }
   async function sair(){ await supabase?.auth.signOut(); setSession(null); }
-  async function carregarTudo(){ await Promise.all([carregarLeads(), carregarAvaliacoes(), carregarStories(), carregarBanners()]); }
+  async function carregarTudo(){ await Promise.all([
+  carregarLeads(),
+  carregarAvaliacoes(),
+  carregarStories(),
+  carregarBanners(),
+  carregarSettings(),
+  carregarVisitas()
+]); }
 
   async function carregarLeads(){
     if(!supabase) return;
@@ -156,6 +176,47 @@ export default function AdminPage() {
     carregarBanners();
   }
 
+  async function carregarSettings() {
+  if (!supabase) return;
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('*')
+    .eq('id', 1)
+    .single();
+
+  if (!error && data) setSettings(data);
+}
+
+async function salvarSettings(e: any) {
+  e.preventDefault();
+  if (!supabase) return;
+
+  const { error } = await supabase
+    .from('site_settings')
+    .upsert({ ...settings, id: 1 });
+
+  if (error) return alert(error.message);
+  alert('Aparência salva com sucesso!');
+}
+
+async function carregarVisitas() {
+  if (!supabase) return;
+  const { data } = await supabase
+    .from('site_visits')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  setVisitas(data || []);
+}
+
+async function excluirLead(id: string) {
+  if (!supabase || !confirm('Apagar este lead?')) return;
+  const { error } = await supabase.from('leads').delete().eq('id', id);
+  if (error) return alert(error.message);
+  carregarLeads();
+}
+
   const stats=useMemo(()=>({total:leads.length,novos:leads.filter(l=>!l.status||l.status==='novo').length,contato:leads.filter(l=>l.status==='em_contato').length,fechado:leads.filter(l=>l.status==='fechado').length}),[leads]);
 
   if(!session){
@@ -177,6 +238,8 @@ export default function AdminPage() {
       <button className={`admin-nav-btn ${tab==='avaliacoes'?'active':''}`} onClick={()=>setTab('avaliacoes')}>Avaliações</button>
       <button className={`admin-nav-btn ${tab==='stories'?'active':''}`} onClick={()=>setTab('stories')}>Stories / Vídeos</button>
       <button className={`admin-nav-btn ${tab==='banners'?'active':''}`} onClick={()=>setTab('banners')}>Banners</button>
+      <button className={`admin-nav-btn ${tab==='aparencia'?'active':''}`} onClick={()=>setTab('aparencia')}>Aparência</button>
+      <button className={`admin-nav-btn ${tab==='visitas'?'active':''}`} onClick={()=>setTab('visitas')}>Visitantes</button>
       <button className="action-btn action-danger" style={{width:'100%',marginTop:20}} onClick={sair}>Sair</button>
     </aside>
 
@@ -196,7 +259,7 @@ export default function AdminPage() {
             return <tr key={l.id}>
               <td><strong>{l.nome}</strong><br/><small>{l.email||'-'}</small></td><td>{l.telefone}</td><td>{l.cidade||'-'}</td><td>{moeda(l.conta_luz||l.conta)}</td>
               <td><div style={{display:'grid',gap:8}}><span className={statusClass(status)}>● {statusLabels[status]||status}</span><select className="admin-select" value={status} onChange={e=>atualizarLead(l.id,e.target.value)}><option value="novo">Novo</option><option value="em_contato">Em contato</option><option value="orcamento_enviado">Orçamento enviado</option><option value="fechado">Fechado</option><option value="perdido">Perdido</option></select></div></td>
-              <td><div className="action-row"><a className="action-btn action-whatsapp" href={`https://wa.me/${phoneBR(l.telefone)}`} target="_blank">🟢 WhatsApp</a><a className="action-btn action-phone" href={`tel:+${phoneBR(l.telefone)}`}>📞 Ligar</a>{l.email&&<a className="action-btn action-email" href={`mailto:${l.email}`}>✉️ E-mail</a>}</div></td>
+              <td><div className="action-row"><a className="action-btn action-whatsapp" href={`https://wa.me/${phoneBR(l.telefone)}`} target="_blank">🟢 WhatsApp</a><a className="action-btn action-phone" href={`tel:+${phoneBR(l.telefone)}`}>📞 Ligar</a>{l.email&&<a className="action-btn action-email" href={`mailto:${l.email}`}>✉️ E-mail</a>}<button className="action-btn action-danger" onClick={()=>excluirLead(l.id)}>🗑 Excluir</button></div></td>
             </tr>
           })}
           </tbody></table></div>
@@ -254,6 +317,64 @@ export default function AdminPage() {
         </form>
         {banners.map(b=><div className="admin-card" key={b.id}><strong>{b.area}</strong> — {b.titulo} — {b.modo_exibicao||'banner'}<br/><small>{b.imagem_url}</small><br/><button className="action-btn action-danger" onClick={()=>excluirBanner(b.id)}>Excluir</button></div>)}
       </div>}
+
+      {tab==='aparencia'&&<div className="admin-card">
+        <div className="admin-title-row"><h1>Aparência do Site</h1><button className="action-btn action-primary" onClick={carregarSettings}>Atualizar</button></div>
+        <form className="admin-form-grid" onSubmit={salvarSettings}>
+          <label>Logo do site</label>
+          <input className="admin-input" placeholder="URL da logo" value={settings.logo_url||''} onChange={e=>setSettings({...settings,logo_url:e.target.value})}/>
+          <input className="admin-input" type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0]; if(!file)return; try{const url=await uploadSiteMedia(file,'aparencia'); setSettings({...settings,logo_url:url});}catch(err:any){alert(err.message)}}}/>
+          {settings.logo_url&&<div className="admin-font-preview"><img src={settings.logo_url} style={{maxWidth:180,maxHeight:80,objectFit:'contain'}}/></div>}
+
+          <label>Banner background da Home</label>
+          <input className="admin-input" placeholder="URL do banner da home" value={settings.home_banner_url||''} onChange={e=>setSettings({...settings,home_banner_url:e.target.value})}/>
+          <input className="admin-input" type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0]; if(!file)return; try{const url=await uploadSiteMedia(file,'home'); setSettings({...settings,home_banner_url:url});}catch(err:any){alert(err.message)}}}/>
+
+          <label>Posição do banner</label>
+          <select className="admin-select-full" value={settings.home_banner_position||'center'} onChange={e=>setSettings({...settings,home_banner_position:e.target.value})}>
+            <option value="center">Centro</option>
+            <option value="top">Topo</option>
+            <option value="bottom">Baixo</option>
+            <option value="left">Esquerda</option>
+            <option value="right">Direita</option>
+          </select>
+
+          <label>Imagem do bloco Próximo Passo</label>
+          <input className="admin-input" placeholder="URL da imagem do bloco" value={settings.hero_card_image_url||''} onChange={e=>setSettings({...settings,hero_card_image_url:e.target.value})}/>
+          <input className="admin-input" type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0]; if(!file)return; try{const url=await uploadSiteMedia(file,'hero-card'); setSettings({...settings,hero_card_image_url:url});}catch(err:any){alert(err.message)}}}/>
+
+          <label>Cor de fundo Home</label>
+          <input className="admin-input" type="color" value={settings.background_home||'#ffffff'} onChange={e=>setSettings({...settings,background_home:e.target.value})}/>
+          <label>Cor de fundo Stories</label>
+          <input className="admin-input" type="color" value={settings.background_stories||'#ffffff'} onChange={e=>setSettings({...settings,background_stories:e.target.value})}/>
+          <label>Cor de fundo Avaliações</label>
+          <input className="admin-input" type="color" value={settings.background_reviews||'#ffffff'} onChange={e=>setSettings({...settings,background_reviews:e.target.value})}/>
+
+          <div className="admin-font-preview" style={{background:settings.background_home||'#fff',padding:20,borderRadius:16}}>Exemplo Home</div>
+          <div className="admin-font-preview" style={{background:settings.background_stories||'#fff',padding:20,borderRadius:16}}>Exemplo Stories</div>
+          <div className="admin-font-preview" style={{background:settings.background_reviews||'#fff',padding:20,borderRadius:16}}>Exemplo Avaliações</div>
+
+          <button className="action-btn action-primary">Salvar aparência</button>
+        </form>
+      </div>}
+
+      {tab==='visitas'&&<div className="admin-card">
+        <div className="admin-title-row"><h1>Visitantes</h1><button className="action-btn action-primary" onClick={carregarVisitas}>Atualizar</button></div>
+        <div className="admin-grid-stats">
+          <div className="admin-stat"><small>Total carregado</small><strong>{visitas.length}</strong></div>
+          <div className="admin-stat"><small>Última visita</small><strong>{visitas[0]?.created_at ? new Date(visitas[0].created_at).toLocaleString('pt-BR') : '-'}</strong></div>
+        </div>
+        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Página</th><th>Origem</th><th>Cidade/Estado</th><th>Data</th><th>Navegador</th></tr></thead><tbody>
+          {visitas.map(v=><tr key={v.id}>
+            <td>{v.page||'-'}</td>
+            <td>{v.origem||'-'}</td>
+            <td>{v.cidade||'-'} {v.estado?`/ ${v.estado}`:''}</td>
+            <td>{v.created_at ? new Date(v.created_at).toLocaleString('pt-BR') : '-'}</td>
+            <td><small>{v.user_agent||'-'}</small></td>
+          </tr>)}
+        </tbody></table></div>
+      </div>}
+
     </section>
   </main>
 }
