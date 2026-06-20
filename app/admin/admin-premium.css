@@ -1,0 +1,23 @@
+/* ES Elétrica RJ - Admin Premium V2.6 */
+.admin-premium{min-height:100vh;background:#f1f5f9;display:grid;grid-template-columns:260px 1fr;color:#0f172a}
+.admin-sidebar{background:linear-gradient(180deg,#001f3f,#043b75);color:#fff;padding:24px;position:sticky;top:0;height:100vh}
+.admin-nav-btn{width:100%;border:0;border-radius:12px;padding:13px 14px;margin-bottom:9px;text-align:left;font-weight:800;cursor:pointer;background:rgba(255,255,255,.09);color:#e2e8f0}
+.admin-nav-btn.active{background:#facc15;color:#001f3f}
+.admin-main{padding:26px}
+.admin-card{background:#fff;border:1px solid #e2e8f0;border-radius:22px;padding:22px;box-shadow:0 12px 35px rgba(15,23,42,.06);margin-bottom:20px}
+.admin-title-row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.admin-grid-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.admin-stat{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px}
+.admin-stat small{color:#64748b;font-weight:800;text-transform:uppercase;font-size:11px}
+.admin-stat strong{display:block;font-size:28px;margin-top:5px;color:#0f172a}
+.admin-table-wrap{overflow-x:auto}.admin-table{width:100%;min-width:950px;border-collapse:collapse}
+.admin-table th{text-align:left;color:#475569;font-size:12px;text-transform:uppercase;padding:13px;border-bottom:1px solid #e2e8f0}
+.admin-table td{padding:13px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+.status-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:900}
+.status-novo{background:#dbeafe;color:#1d4ed8}.status-em_contato{background:#ffedd5;color:#c2410c}.status-orcamento_enviado{background:#fef9c3;color:#a16207}.status-fechado{background:#dcfce7;color:#15803d}.status-perdido{background:#fee2e2;color:#b91c1c}.status-pendente{background:#ede9fe;color:#6d28d9}.status-aprovado{background:#dcfce7;color:#15803d}.status-reprovado{background:#fee2e2;color:#b91c1c}
+.admin-select,.admin-input,.admin-textarea,.admin-select-full{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:11px;background:#fff;font-weight:700}
+.admin-textarea{min-height:110px;resize:vertical}.action-row{display:flex;gap:8px;flex-wrap:wrap}
+.action-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:11px;padding:9px 12px;font-weight:900;cursor:pointer;text-decoration:none;font-size:13px}
+.action-whatsapp{background:#dcfce7;color:#15803d}.action-phone{background:#e0f2fe;color:#0369a1}.action-email{background:#fef3c7;color:#92400e}.action-primary{background:#dbeafe;color:#1d4ed8}.action-danger{background:#fee2e2;color:#b91c1c}.action-approved{background:#dcfce7;color:#15803d}
+.admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.admin-font-preview{border:1px dashed #cbd5e1;border-radius:14px;padding:14px;background:#f8fafc}
+@media(max-width:900px){.admin-premium{grid-template-columns:1fr}.admin-sidebar{height:auto;position:relative}.admin-grid-stats,.admin-form-grid{grid-template-columns:1fr}}
