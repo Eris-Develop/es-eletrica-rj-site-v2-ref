@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { supabase, supabaseReady } from '@/lib/supabase';
+import { useEffect, useMemo, useState } from 'react';
 import './admin-premium.css';
 
 type Any = any;
@@ -51,8 +51,6 @@ export default function AdminPage() {
 });
 
 const [visitas, setVisitas] = useState<any[]>([]);
-const [carregandoLeads, setCarregandoLeads] = useState(false);
-const [leadMsg, setLeadMsg] = useState('');
 
   const [storyForm, setStoryForm] = useState({ titulo:'', descricao:'', tipo:'imagem', media_url:'', link_url:'', ativo:true, publicado:true, ordem:1, fonte:'Arial', cor_texto:'#0f172a', tamanho_texto:'16' });
   const [bannerForm, setBannerForm] = useState({ titulo:'', subtitulo:'', area:'home_topo', imagem_url:'', link_url:'', ativo:true, publicado:true, modo_exibicao:'banner', fonte:'Arial', cor_texto:'#ffffff', tamanho_texto:'26' });
@@ -84,23 +82,9 @@ const [leadMsg, setLeadMsg] = useState('');
 
   async function carregarLeads(){
     if(!supabase) return;
-    setCarregandoLeads(true);
-    setLeadMsg('');
-    const {data,error}=await supabase
-      .from('leads')
-      .select('*')
-      .order('created_at',{ascending:false});
-
-    setCarregandoLeads(false);
-
-    if(error){
-      setErro(error.message);
-      setLeadMsg('Erro ao atualizar leads: ' + error.message);
-      return;
-    }
-
+    const {data,error}=await supabase.from('leads').select('*').order('created_at',{ascending:false});
+    if(error) return setErro(error.message);
     setLeads(data||[]);
-    setLeadMsg('Leads atualizados.');
   }
   async function atualizarLead(id:string,status:string){
     if(!supabase) return;
@@ -227,25 +211,10 @@ async function carregarVisitas() {
 }
 
 async function excluirLead(id: string) {
-  if (!supabase) return;
-
-  setLeadMsg('');
-  const anterior = leads;
-  setLeads(leads.filter(l => l.id !== id));
-
-  const { error } = await supabase
-    .from('leads')
-    .delete()
-    .eq('id', id);
-
-  if (error) {
-    setLeads(anterior);
-    setLeadMsg('Erro ao excluir lead: ' + error.message);
-    return;
-  }
-
-  setLeadMsg('Lead excluído.');
-  await carregarLeads();
+  if (!supabase || !confirm('Apagar este lead?')) return;
+  const { error } = await supabase.from('leads').delete().eq('id', id);
+  if (error) return alert(error.message);
+  carregarLeads();
 }
 
   const stats=useMemo(()=>({total:leads.length,novos:leads.filter(l=>!l.status||l.status==='novo').length,contato:leads.filter(l=>l.status==='em_contato').length,fechado:leads.filter(l=>l.status==='fechado').length}),[leads]);
@@ -283,8 +252,7 @@ async function excluirLead(id: string) {
           <div className="admin-stat"><small>Fechados</small><strong>{stats.fechado}</strong></div>
         </div>
         <div className="admin-card">
-          <div className="admin-title-row"><h1>Leads</h1><button className="action-btn action-primary" onClick={carregarLeads} disabled={carregandoLeads}>{carregandoLeads?'Atualizando...':'Atualizar'}</button></div>
-          {leadMsg&&<p style={{marginTop:0,color:leadMsg.startsWith('Erro')?'#b91c1c':'#166534'}}>{leadMsg}</p>}
+          <div className="admin-title-row"><h1>Leads</h1><button className="action-btn action-primary" onClick={carregarLeads}>Atualizar</button></div>
           <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Nome</th><th>Telefone</th><th>Cidade</th><th>Conta</th><th>Status</th><th>Ações</th></tr></thead><tbody>
           {leads.map(l=>{
             const status=l.status||'novo';
@@ -349,6 +317,64 @@ async function excluirLead(id: string) {
         </form>
         {banners.map(b=><div className="admin-card" key={b.id}><strong>{b.area}</strong> — {b.titulo} — {b.modo_exibicao||'banner'}<br/><small>{b.imagem_url}</small><br/><button className="action-btn action-danger" onClick={()=>excluirBanner(b.id)}>Excluir</button></div>)}
       </div>}
+
+      {tab==='aparencia'&&<div className="admin-card">
+        <div className="admin-title-row"><h1>Aparência do Site</h1><button className="action-btn action-primary" onClick={carregarSettings}>Atualizar</button></div>
+        <form className="admin-form-grid" onSubmit={salvarSettings}>
+          <label>Logo do site</label>
+          <input className="admin-input" placeholder="URL da logo" value={settings.logo_url||''} onChange={e=>setSettings({...settings,logo_url:e.target.value})}/>
+          <input className="admin-input" type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0]; if(!file)return; try{const url=await uploadSiteMedia(file,'aparencia'); setSettings({...settings,logo_url:url});}catch(err:any){alert(err.message)}}}/>
+          {settings.logo_url&&<div className="admin-font-preview"><img src={settings.logo_url} style={{maxWidth:180,maxHeight:80,objectFit:'contain'}}/></div>}
+
+          <label>Banner background da Home</label>
+          <input className="admin-input" placeholder="URL do banner da home" value={settings.home_banner_url||''} onChange={e=>setSettings({...settings,home_banner_url:e.target.value})}/>
+          <input className="admin-input" type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0]; if(!file)return; try{const url=await uploadSiteMedia(file,'home'); setSettings({...settings,home_banner_url:url});}catch(err:any){alert(err.message)}}}/>
+
+          <label>Posição do banner</label>
+          <select className="admin-select-full" value={settings.home_banner_position||'center'} onChange={e=>setSettings({...settings,home_banner_position:e.target.value})}>
+            <option value="center">Centro</option>
+            <option value="top">Topo</option>
+            <option value="bottom">Baixo</option>
+            <option value="left">Esquerda</option>
+            <option value="right">Direita</option>
+          </select>
+
+          <label>Imagem do bloco Próximo Passo</label>
+          <input className="admin-input" placeholder="URL da imagem do bloco" value={settings.hero_card_image_url||''} onChange={e=>setSettings({...settings,hero_card_image_url:e.target.value})}/>
+          <input className="admin-input" type="file" accept="image/*" onChange={async e=>{const file=e.target.files?.[0]; if(!file)return; try{const url=await uploadSiteMedia(file,'hero-card'); setSettings({...settings,hero_card_image_url:url});}catch(err:any){alert(err.message)}}}/>
+
+          <label>Cor de fundo Home</label>
+          <input className="admin-input" type="color" value={settings.background_home||'#ffffff'} onChange={e=>setSettings({...settings,background_home:e.target.value})}/>
+          <label>Cor de fundo Stories</label>
+          <input className="admin-input" type="color" value={settings.background_stories||'#ffffff'} onChange={e=>setSettings({...settings,background_stories:e.target.value})}/>
+          <label>Cor de fundo Avaliações</label>
+          <input className="admin-input" type="color" value={settings.background_reviews||'#ffffff'} onChange={e=>setSettings({...settings,background_reviews:e.target.value})}/>
+
+          <div className="admin-font-preview" style={{background:settings.background_home||'#fff',padding:20,borderRadius:16}}>Exemplo Home</div>
+          <div className="admin-font-preview" style={{background:settings.background_stories||'#fff',padding:20,borderRadius:16}}>Exemplo Stories</div>
+          <div className="admin-font-preview" style={{background:settings.background_reviews||'#fff',padding:20,borderRadius:16}}>Exemplo Avaliações</div>
+
+          <button className="action-btn action-primary">Salvar aparência</button>
+        </form>
+      </div>}
+
+      {tab==='visitas'&&<div className="admin-card">
+        <div className="admin-title-row"><h1>Visitantes</h1><button className="action-btn action-primary" onClick={carregarVisitas}>Atualizar</button></div>
+        <div className="admin-grid-stats">
+          <div className="admin-stat"><small>Total carregado</small><strong>{visitas.length}</strong></div>
+          <div className="admin-stat"><small>Última visita</small><strong>{visitas[0]?.created_at ? new Date(visitas[0].created_at).toLocaleString('pt-BR') : '-'}</strong></div>
+        </div>
+        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Página</th><th>Origem</th><th>Cidade/Estado</th><th>Data</th><th>Navegador</th></tr></thead><tbody>
+          {visitas.map(v=><tr key={v.id}>
+            <td>{v.page||'-'}</td>
+            <td>{v.origem||'-'}</td>
+            <td>{v.cidade||'-'} {v.estado?`/ ${v.estado}`:''}</td>
+            <td>{v.created_at ? new Date(v.created_at).toLocaleString('pt-BR') : '-'}</td>
+            <td><small>{v.user_agent||'-'}</small></td>
+          </tr>)}
+        </tbody></table></div>
+      </div>}
+
     </section>
   </main>
 }
